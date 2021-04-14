@@ -313,7 +313,7 @@ for epoch in range(opt.n_epochs):
             % (epoch, opt.n_epochs, i, len(dataloader), d_loss.item(), g_loss.item(), info_loss.item())
         )
         new_row = [epoch, opt.dataset, d_loss.item(), g_loss.item(), info_loss.item()]
-        svaing_dataframe.loc[df_index] = new_row
+        saving_dataframe.loc[df_index] = new_row
         df_index += 1
 
         batches_done = epoch * len(dataloader) + i
