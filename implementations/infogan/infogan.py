@@ -15,10 +15,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-os.makedirs("images/static/", exist_ok=True)
-os.makedirs("images/varying_c1/", exist_ok=True)
-os.makedirs("images/varying_c2/", exist_ok=True)
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
@@ -149,6 +145,9 @@ discriminator.apply(weights_init_normal)
 # MNIST DATASET
 # Configure data loader
 if opt.dataset == "mnist":
+    os.makedirs("images_mnist/static/", exist_ok=True)
+    os.makedirs("images_mnist/varying_c1/", exist_ok=True)
+    os.makedirs("images_mnist/varying_c2/", exist_ok=True)
     os.makedirs("../../data/mnist", exist_ok=True)
     dataloader = torch.utils.data.DataLoader(
         datasets.MNIST(
@@ -164,6 +163,9 @@ if opt.dataset == "mnist":
     )
 # CIFAR10 DATASET
 if opt.dataset == "cifar10":
+    os.makedirs("images_cifar10/static/", exist_ok=True)
+    os.makedirs("images_cifar10/varying_c1/", exist_ok=True)
+    os.makedirs("images_cifar10/varying_c2/", exist_ok=True)
     os.makedirs("../../data/cifar10", exist_ok=True)
     dataloader = torch.utils.data.DataLoader(
         datasets.CIFAR10(
@@ -196,22 +198,26 @@ static_label = to_categorical(
 static_code = Variable(FloatTensor(np.zeros((opt.n_classes ** 2, opt.code_dim))))
 
 
-def sample_image(n_row, batches_done):
+def sample_image(n_row, batches_done, epoch):
     """Saves a grid of generated digits ranging from 0 to n_classes"""
     # Static sample
     z = Variable(FloatTensor(np.random.normal(0, 1, (n_row ** 2, opt.latent_dim))))
     static_sample = generator(z, static_label, static_code)
     save_image(static_sample.data, "images/static/%d.png" % batches_done, nrow=n_row, normalize=True)
+    for i in range(len(static_sample.data)):
+        os.makedirs("images_cifar10/static/epoch_{}".format(epoch), exist_ok=True)
+        print("type of the static_sample.data[ii]: {}".format(type(static_sample.data[i])))
+        save_image(static_sample.data[i], "images_cifar10/static/epoch_{}/img_{}.png".format(epoch, i), normalize=True)
 
-    # Get varied c1 and c2
-    zeros = np.zeros((n_row ** 2, 1))
-    c_varied = np.repeat(np.linspace(-1, 1, n_row)[:, np.newaxis], n_row, 0)
-    c1 = Variable(FloatTensor(np.concatenate((c_varied, zeros), -1)))
-    c2 = Variable(FloatTensor(np.concatenate((zeros, c_varied), -1)))
-    sample1 = generator(static_z, static_label, c1)
-    sample2 = generator(static_z, static_label, c2)
-    save_image(sample1.data, "images/varying_c1/%d.png" % batches_done, nrow=n_row, normalize=True)
-    save_image(sample2.data, "images/varying_c2/%d.png" % batches_done, nrow=n_row, normalize=True)
+    # # Get varied c1 and c2
+    # zeros = np.zeros((n_row ** 2, 1))
+    # c_varied = np.repeat(np.linspace(-1, 1, n_row)[:, np.newaxis], n_row, 0)
+    # c1 = Variable(FloatTensor(np.concatenate((c_varied, zeros), -1)))
+    # c2 = Variable(FloatTensor(np.concatenate((zeros, c_varied), -1)))
+    # sample1 = generator(static_z, static_label, c1)
+    # sample2 = generator(static_z, static_label, c2)
+    # save_image(sample1.data, "images/varying_c1/%d.png" % batches_done, nrow=n_row, normalize=True)
+    # save_image(sample2.data, "images/varying_c2/%d.png" % batches_done, nrow=n_row, normalize=True)
 
 
 # ----------
@@ -309,4 +315,4 @@ for epoch in range(opt.n_epochs):
         )
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
-            sample_image(n_row=10, batches_done=batches_done)
+            sample_image(n_row=10, batches_done=batches_done, epoch=epoch)
