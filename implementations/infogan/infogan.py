@@ -3,6 +3,7 @@ import os
 import numpy as np
 import math
 import itertools
+import pandas as pd
 
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
@@ -31,6 +32,9 @@ parser.add_argument("--sample_interval", type=int, default=400, help="interval b
 parser.add_argument("--dataset", type=str, default="mnist", choices=["mnist", "cifar10"], help="which dataset to use for training")
 opt = parser.parse_args()
 print(opt)
+
+# define a dataframe for recording the data
+saving_dataframe = pd.DataFrame(columns=['epoch', 'dataset', 'd_loss', 'g_loss', 'info_loss'])
 
 cuda = True if torch.cuda.is_available() else False
 
@@ -146,8 +150,6 @@ discriminator.apply(weights_init_normal)
 # Configure data loader
 if opt.dataset == "mnist":
     os.makedirs("images_mnist/static/", exist_ok=True)
-    os.makedirs("images_mnist/varying_c1/", exist_ok=True)
-    os.makedirs("images_mnist/varying_c2/", exist_ok=True)
     os.makedirs("../../data/mnist", exist_ok=True)
     dataloader = torch.utils.data.DataLoader(
         datasets.MNIST(
@@ -164,8 +166,6 @@ if opt.dataset == "mnist":
 # CIFAR10 DATASET
 if opt.dataset == "cifar10":
     os.makedirs("images_cifar10/static/", exist_ok=True)
-    os.makedirs("images_cifar10/varying_c1/", exist_ok=True)
-    os.makedirs("images_cifar10/varying_c2/", exist_ok=True)
     os.makedirs("../../data/cifar10", exist_ok=True)
     dataloader = torch.utils.data.DataLoader(
         datasets.CIFAR10(
@@ -198,15 +198,14 @@ static_label = to_categorical(
 static_code = Variable(FloatTensor(np.zeros((opt.n_classes ** 2, opt.code_dim))))
 
 
-def sample_image(n_row, batches_done, epoch):
+def sample_image(n_row, batches_done, epoch, dataset_name):
     """Saves a grid of generated digits ranging from 0 to n_classes"""
     # Static sample
     z = Variable(FloatTensor(np.random.normal(0, 1, (n_row ** 2, opt.latent_dim))))
     static_sample = generator(z, static_label, static_code)
     # save_image(static_sample.data, "images/static/%d.png" % batches_done, nrow=n_row, normalize=True)
     for i in range(len(static_sample.data)):
-        os.makedirs("images_cifar10/static/epoch_{}".format(epoch), exist_ok=True)
-        print("type of the static_sample.data[ii]: {}".format(type(static_sample.data[i])))
+        os.makedirs("images_{}/static/epoch_{}".format(dataset_name, epoch), exist_ok=True)
         save_image(static_sample.data[i], "images_cifar10/static/epoch_{}/img_{}.png".format(epoch, i), normalize=True)
 
     # # Get varied c1 and c2
@@ -223,7 +222,7 @@ def sample_image(n_row, batches_done, epoch):
 # ----------
 #  Training
 # ----------
-
+df_index = 0
 for epoch in range(opt.n_epochs):
     for i, (imgs, labels) in enumerate(dataloader):
 
@@ -313,6 +312,13 @@ for epoch in range(opt.n_epochs):
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f] [info loss: %f]"
             % (epoch, opt.n_epochs, i, len(dataloader), d_loss.item(), g_loss.item(), info_loss.item())
         )
+        new_row = [epoch, opt.dataset, d_loss.item(), g_loss.item(), info_loss.item()]
+        svaing_dataframe.loc[df_index] = new_row
+        df_index += 1
+
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
-            sample_image(n_row=10, batches_done=batches_done, epoch=epoch)
+            sample_image(n_row=10, batches_done=batches_done, epoch=epoch, dataset_name=opt.dataset)
+
+# save dataframe with the data
+saving_dataframe.to_csv('infogan_{}eps_{}.csv'.format(opt.n_epochs, opt.dataset))
