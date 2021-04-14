@@ -206,7 +206,7 @@ def sample_image(n_row, batches_done, epoch, dataset_name):
     # save_image(static_sample.data, "images/static/%d.png" % batches_done, nrow=n_row, normalize=True)
     for i in range(len(static_sample.data)):
         os.makedirs("images_{}/static/epoch_{}".format(dataset_name, epoch), exist_ok=True)
-        save_image(static_sample.data[i], "images_cifar10/static/epoch_{}/img_{}.png".format(epoch, i), normalize=True)
+        save_image(static_sample.data[i], "images_{}/static/epoch_{}/img_{}.png".format(dataset_name, epoch, i), normalize=True)
 
     # # Get varied c1 and c2
     # zeros = np.zeros((n_row ** 2, 1))
