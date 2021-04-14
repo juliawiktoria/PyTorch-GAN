@@ -203,7 +203,7 @@ def sample_image(n_row, batches_done, epoch):
     # Static sample
     z = Variable(FloatTensor(np.random.normal(0, 1, (n_row ** 2, opt.latent_dim))))
     static_sample = generator(z, static_label, static_code)
-    save_image(static_sample.data, "images/static/%d.png" % batches_done, nrow=n_row, normalize=True)
+    # save_image(static_sample.data, "images/static/%d.png" % batches_done, nrow=n_row, normalize=True)
     for i in range(len(static_sample.data)):
         os.makedirs("images_cifar10/static/epoch_{}".format(epoch), exist_ok=True)
         print("type of the static_sample.data[ii]: {}".format(type(static_sample.data[i])))
