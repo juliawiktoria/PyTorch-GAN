@@ -166,3 +166,9 @@ for epoch in range(opt.n_epochs):
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
             save_image(gen_imgs.data[:25], "images/%d.png" % batches_done, nrow=5, normalize=True)
+            new_path = os.path.join("images", "epoch_{}".format(epoch))
+            os.makedirs(new_path, exist_ok=True)
+            for i in range(len(gen_imgs.data[:25])):
+                print("type of gen imgs.data[i]: {}".format(type(gen_imgs.data[i])))
+                save_image(gen_imgs.data[i], "images/%d.png" % batches_done, nrow=5, normalize=True)
+
