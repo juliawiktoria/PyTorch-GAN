@@ -27,6 +27,7 @@ parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality 
 parser.add_argument("--img_size", type=int, default=28, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=1, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval betwen image samples")
+parser.add_argument("--dataset", type=str, default="mnist", choices=["mnist", "cifar10"], help="which dataset to train on")
 opt = parser.parse_args()
 print(opt)
 
@@ -93,19 +94,34 @@ if cuda:
     adversarial_loss.cuda()
 
 # Configure data loader
-os.makedirs("../../data/mnist", exist_ok=True)
-dataloader = torch.utils.data.DataLoader(
-    datasets.MNIST(
-        "../../data/mnist",
-        train=True,
-        download=True,
-        transform=transforms.Compose(
-            [transforms.Resize(opt.img_size), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
+if opt.dataset == "mnist":
+    os.makedirs("../../data/mnist", exist_ok=True)
+    dataloader = torch.utils.data.DataLoader(
+        datasets.MNIST(
+            "../../data/mnist",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [transforms.Resize(opt.img_size), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
+            ),
         ),
-    ),
-    batch_size=opt.batch_size,
-    shuffle=True,
-)
+        batch_size=opt.batch_size,
+        shuffle=True,
+    )
+if opt.dataset == "cifar10":
+    os.makedirs("../../data/cifar", exist_ok=True)
+    dataloader = torch.utils.data.DataLoader(
+        datasets.CIFAR10(
+            "../../data/cifar",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [transforms.Resize(opt.img_size), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
+            ),
+        ),
+        batch_size=opt.batch_size,
+        shuffle=True,
+    )
 
 # Optimizers
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
